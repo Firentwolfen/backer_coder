@@ -8,15 +8,27 @@ class productManager {
     (this.#products = []), (this.#path = ruta);
   }
 
+async #conexionarchivo(){
+  let archivoexiste = fs.existsSync(this.#path);
+
+  if (archivoexiste) {
+    const resultado = await fs.promises.readFile(this.#path, "utf-8");
+
+    if (resultado) {
+    return resultado
+    } 
+    else {
+  return {msg:"El archivo que desea revisar no existe"}
+ }
+  }
+}
+
   async addProduct(productoaagregar) {
-    //this.#products = [];
-    const { code, title, description, price, stock, thumbnail } =
+    const { code, title, description, price, stock, category, thumbnails} =
       productoaagregar;
 
-    if (!title || !description || !price || !thumbnail || !code || !stock) {
-      return console.warn(
-        `Todos los campos son obligatorios, favor de ingresar la informacion correctamente`
-      );
+    if (!title || !description || !price || !category || !code || !stock) {
+      return {msg: `Todos los campos son obligatorios, favor de ingresar la informacion correctamente`};
     } else {
      
       const resultado = await fs.promises.readFile(this.#path, "utf-8");
@@ -28,9 +40,7 @@ class productManager {
       const chequeo = this.#products.some((elemento) => elemento.code == code);
 
       if (chequeo === true) {
-        return console.error(
-          `El codigo ${code} que esta ingresando se encuentra usado por otro producto, favor de utilizar otro`
-        );
+        return {msg: `El codigo ${code} que esta ingresando se encuentra usado por otro producto, favor de utilizar otro`};
       } else {
        
         let idsumable = this.#products.length+1;
@@ -40,26 +50,28 @@ class productManager {
           code,
           title,
           description,
+          category,
           price,
           stock,
-          thumbnail,
           status:true,
+          thumbnails,
         };
 
         this.#products.push(productoAgregado);
 
         fs.writeFileSync(this.#path, JSON.stringify(this.#products));
 
-        console.log("El producto ha sido agregado", productoAgregado);
+        return {
+          msg: "El producto ha sido agregado", 
+          product:productoAgregado
+        } 
      }
       }
     }
 
   async getProducts() {
-    let archivoexiste = fs.existsSync(this.#path);
-
-    if (archivoexiste) {
-      const resultado = await fs.promises.readFile(this.#path, "utf-8");
+ 
+    const resultado = await this.#conexionarchivo()
 
       if (resultado) { 
       this.#products= JSON.parse(resultado);
@@ -74,17 +86,12 @@ class productManager {
           } 
         }
       //(this.#products.length>0 ? console.log('Estos son los productos actualmente', this.#products) : console.error('Actualmente no cuentas con productos ingresados. Favor de ingresar los productos al sistema') ) ;
-    } else {
-      return {msg:"El archivo que desea revisar no existe"}
-    }
+   
   }
 
   async getProductsById(idQuery) {
 
-    let archivoexiste = fs.existsSync(this.#path);
-
-    if (archivoexiste) {
-      const resultado = await fs.promises.readFile(this.#path, "utf-8");
+    const resultado = await this.#conexionarchivo()
 
       if (resultado) { 
         this.#products= JSON.parse(resultado);
@@ -97,94 +104,63 @@ class productManager {
           return {msg:"No found it. El producto solicitado no existe"};
         } else {
           return productoSolicitado;
-        }}} 
-        else {
-      return {msg:"El archivo que desea revisar no existe"}
-     }
+        }}
   }
 
-  updateProduct(idQuery, dato, valor) {
-    fs.readFile(this.#path, "utf-8", (err, data) => {
-      if (err) {
-        return console.error(
-          "El archivo donde estan los productos no existe"
-        );
-      }
+ async updateProduct(idQuery, valores) {
+   
+  const resultado = await this.#conexionarchivo()
 
-      this.#products = JSON.parse(data);
+    if (resultado) { 
+
+      this.#products = JSON.parse(resultado);
 
       const productoSolicitado = this.#products.find(
         (elemento) => elemento.id === idQuery && elemento.status === true
       );
 
       if (productoSolicitado === undefined) {
-        return console.error("No found it. El producto a actualizar no existe");
+        return {msg: `No found it. El producto a actualizar no existe`};
       } else {
-       let {code, title, description, price, stock, thumbnail } = productoSolicitado
+       let { code } = valores
        let productoactualizado={}
 
-    switch (dato) {
-        case 'code':
-        code=valor  
-        productoactualizado={...productoSolicitado,code}
-         break;
-    
-         case 'title':
-          title=valor
-        productoactualizado={...productoSolicitado,title}
-         break;
+   
+        const coderepetido= this.#products.find((elemento) =>  elemento.code === code && elemento.status === true);
+        if (coderepetido != undefined) {
+          return {msg: `El codigo ${code} que esta ingresando se encuentra usado por otro producto, favor de utilizar otro`} 
+        } else {
+        productoactualizado={...productoSolicitado,...valores}
+        }
 
-         case 'description':
-          description=valor
-        productoactualizado={...productoSolicitado,description}
-         break;
-
-         case 'price':
-          price=valor
-        productoactualizado={...productoSolicitado,price}
-         break;
-
-         case 'stock':
-          stock=valor
-        productoactualizado={...productoSolicitado,stock}
-         break;
-
-         case 'thumbnail':
-          thumbnail=valor
-        productoactualizado={...productoSolicitado,thumbnail}
-         break;
-
-        default:
-            break;
-    }
 const listanueva = this.#products.filter((elemento) => elemento.id !== idQuery);
 
 listanueva.push(productoactualizado);
 
 fs.writeFileSync(this.#path, JSON.stringify(listanueva));
-
-console.log("El producto ha sido actualizado: ", productoactualizado);
-
+return {
+  msg: "El producto ha sido actualizado", 
+  productoactualizado
+} 
       }
-    });
+    }
+    
   }
 
-  deleteProduct(idQuery) {
-    fs.readFile(this.#path, "utf-8", (err, data) => {
-      if (err) {
-        return console.error(
-          "El archivo donde estan los productos no existe"
-        );
-      }
+  async deleteProduct(idQuery) {
+   
+    const resultado = await this.#conexionarchivo()
+  
+      if (resultado) { 
 
-      this.#products = JSON.parse(data);
+      this.#products = JSON.parse(resultado);
 
       const productoaborrar = this.#products.find(
         (elemento) => elemento.id === idQuery && elemento.status === true
       );
 
       if (productoaborrar === undefined) {
-        return console.error("No found it. El producto a eliminar no existe");
+        return {msg:"No found it. El producto a eliminar no existe"}
       } else {      
         let { status } = productoaborrar
         let productoactualizado={}
@@ -197,13 +173,15 @@ console.log("El producto ha sido actualizado: ", productoactualizado);
  
  fs.writeFileSync(this.#path, JSON.stringify(listanueva));
 
- const productosvisibles = listanueva.filter((elemento) => elemento.status == true);
-
- console.log("El producto ha sido eliminado correctamente", productosvisibles);  
+ return {msg:"El producto ha sido eliminado correctamente"}
  
        }
-    });
+   
   }
+
+}
+
+
 }
 
 module.exports = productManager;

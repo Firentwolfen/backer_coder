@@ -1,8 +1,9 @@
 const express = require('express');
 const cors = require('cors');
+const morgan = require('morgan');
 const app = express();
-const Producto = require("./ProductManager");
-const producto = new Producto("./datos.json");
+const productsRouter = require('./routers/products.router');
+const cartsRouter = require('./routers/carts.router');
 
 process.env.PORT = process.env.PORT || 8080;
 
@@ -10,9 +11,13 @@ process.env.PORT = process.env.PORT || 8080;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
+app.use(morgan(':method :url :response-time'));
+
+app.use('/api/products/',productsRouter)
+app.use('/api/carts/',cartsRouter)
 
 //endpoints
-app.get('/products',async(req,res)=>{
+/*app.get('/products',async(req,res)=>{
  
     let {limit} = req.query
 
@@ -41,7 +46,7 @@ let response = await producto.getProductsById(productId);
 
 res.status(200).json(response) 
 
-})
+})*/
 
 
 
