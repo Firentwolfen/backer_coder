@@ -490,17 +490,6 @@
         "status": false
     },
     {
-        "id": 51,
-        "code": 124,
-        "title": "Cocacola zer",
-        "description": "bebida de soda dietetica",
-        "category": "liquidos",
-        "price": 1500,
-        "stock": 100,
-        "status": true,
-        "thumbnails": []
-    },
-    {
         "id": 4,
         "code": 7432,
         "title": "Muffin - Blueberry Individual",
@@ -508,6 +497,17 @@
         "price": "$773.65",
         "stock": 53,
         "thumbnail": "http://dummyimage.com/204x118.png/cc0000/ffffff",
+        "status": true,
+        "thumbnails": []
+    },
+    {
+        "id": 51,
+        "code": 124,
+        "title": "Cocacola zer",
+        "description": "bebida de soda dietetica",
+        "category": "liquidos",
+        "price": 1500,
+        "stock": 100,
         "status": true,
         "thumbnails": []
     },

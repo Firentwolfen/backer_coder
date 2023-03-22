@@ -1,0 +1,44 @@
+<!-- Form agregar-->
+<div>
+<h1>Formulario de ingreso de productos</h1>
+    <form onsubmit="return addProduct(this)">
+      <label for="title">Nombre:</label>
+      <input type="text" id="title" name="title" required><br>
+
+      <label for="code">Codigo:</label>
+      <input type="number" id="code" name="code" required><br>
+
+      <label for="price">Precio:</label>
+      <input type="number" id="price" name="price" required><br>
+
+      <label for="stock">Stock:</label>
+      <input type="number" id="stock" name="stock" required><br>
+ 
+      <label for="category">Categoria:</label>
+      <input type="text" id="category" name="category"required><br>
+
+      <label for="description">Descripción:</label>
+      <textarea id="description" name="description" required></textarea><br>
+
+      <input type="submit" value="Ingresar producto">
+    </form>
+</div>
+
+<!-- Form eliminar-->
+<div>
+  <h1>Formulario de eliminacion de productos</h1>
+    <form onsubmit="return deleteProduct(this)">
+      <label for="id">Id:</label>
+      <input type="text" id="id" name="id" required><br>
+      <input type="submit" value="Eliminar producto">
+    </form>
+</div>
+
+<!-- Lista de Productos a mostrar-->
+<h1>Lista de productos</h1>
+<p id="prodArr">  
+</p>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="/index.js"></script>
+
