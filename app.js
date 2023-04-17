@@ -8,8 +8,8 @@ const handlebars = require('express-handlebars');
 const viewsRouter = require('./routes/views.router.js');
 const {Server} = require('socket.io');
 const Producto = require("./ProductManager");
+const dbConnect = require('./db/indexmngdb');
 const producto = new Producto("./routers/products.json");
-
 
 process.env.PORT = process.env.PORT || 8080;
 
@@ -23,8 +23,10 @@ app.use(morgan(':method :url :response-time'));
 app.use('/api/products/',productsRouter)
 app.use('/api/carts/',cartsRouter)
 
-//endpoints
-//
+//MondoDb
+dbConnect();
+
+//Servidor
 const httpServer = app.listen( process.env.PORT, () => {console.log('corriendo en el PORT', process.env.PORT);});
 
 const io = new Server(httpServer);
