@@ -5,6 +5,62 @@ const Productos = require('../models/productos.model');
 const producto = new Producto(__dirname+"/products.json");
 
 router.get('/', async(req,res)=>{
+    let limit = parseInt(req.query.limit) || 10;
+let sort = req.query.sort || undefined;
+let query = req.query.query || undefined;
+let page = parseInt(req.query.page) || 1;
+
+// Mongoose
+
+try {
+  let filter = {};
+
+  if (query) {
+    filter.tipo = query; // Reemplaza "tipo" con el nombre del campo que quieras filtrar
+  }
+
+  let options = {
+    page: page,
+    limit: limit,
+    sort: sort,
+    lean: true,
+  };
+
+  let productos = await Productos.paginate(filter, options);
+    
+  if (productos.length != 0) {
+    
+    let prevLink = productos.hasPrevPage ? `http://localhost:8080/students?page=${productos.prevPage}` : null;
+    let nextLink = productos.hasNextPage ? `http://localhost:8080/students?page=${productos.nextPage}` : null;
+    let isValid = !(page<=0 || page>productos.totalPages);
+    
+    res.status(200).json({
+        status: "success",
+        payload: productos.docs,
+        totalPages: productos.totalPages,
+        prevPage: productos.prevPage,
+        nextPage: productos.nextPage,
+        page: productos.page,
+        hasPrevPage: productos.hasPrevPage,
+        hasNextPage: productos.hasNextPage,
+        prevLink,
+        nextLink
+    }); 
+
+} else {
+   
+    res.status(404).json({
+        status: "error",
+        msg:"Actualmente no cuentas con productos ingresados. Favor de ingresar los productos al sistema",
+        productos: []
+    });
+}
+} catch (error) {
+    console.log(error);
+}
+    
+    
+    /*
     let limit= parseInt(req.query.limit) ?? 10 ;
     let sort= req.query.sort ?? 'asc';
     let query= req.query.query ?? undefined;
@@ -46,7 +102,7 @@ if (productos.length != 0) {
     
 } catch (error) {
     console.log(error);
-}
+}*/
 
     /*sin el MongoBd
     let {limit} = req.query

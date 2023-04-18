@@ -10,7 +10,7 @@ router.get('/', async(req,res)=>{
     //Mongoose
     
 try {
-    const carros = await Carritos.find({ status: true }).populate('productoscarro.product.productos');
+    const carros = await Carritos.find({ status: true }).populate('productos.product');
 
 if (carros.length != 0) {
 
@@ -42,7 +42,7 @@ router.get('/:cid', async(req,res)=>{
      
     try {
 
-        let response = await Carritos.findById(cartId).populate('{productoscarro.product}.productos');
+        let response = await Carritos.findById(cartId).populate('productos.product');
     
     if (response!== null) {
         
@@ -91,60 +91,162 @@ router.post('/', async(req,res)=>{
         })  */
     });
 
-router.post('/:cid/product/:pid', async(req,res)=>{
+router.put('/:cid', async (req, res) => {
+        try {
+          const { productos } = req.body;
+          const carrito = await Carritos.findById(req.params.cid).exec();
+      
+          if (!carrito) {
+            return res.status(404).json({ msg: 'No found it. El carrito no existe' });
+          }
+      
+          for (const producto of productos) {
+            const productoBD = await Productos.findById(producto.product).exec();
+            if (!productoBD) {
+              return res.status(404).json({ msg: `No found it. El producto con ID ${producto.product} no existe` });
+            }
+            productoBD.stock -= producto.quantity;
+            await productoBD.save();
+          }
+      
+          carrito.productos = productos;
+          await carrito.save();
+      
+          res.status(200).json({
+            status: 'success',
+            payload: carrito.productos,
+          });
+        } catch (error) {
+          console.error(error);
+          res.status(500).json({ msg: 'Hubo un error al actualizar el carrito' });
+        }
+      });
+
+router.put('/:cid/products/:pid', async(req,res)=>{
  
     let cartId = req.params.cid;
     let productId = req.params.pid;
 
     const {quantity} = req.body
-
-    try {
-
-        if (!cartId || !productId || !quantity ) {
-            return res.send({status:"error", msg: `Todos los campos son obligatorios, favor de ingresar la informacion correctamente`});
-          } else {
     
-        let carritoactualizar = await Carritos.findOne({_id: cartId});
-        let productoagregar = await Productos.findOne({_id: productId, status: true} );
-        let productosActuales = carritoactualizar.productoscarro;
+    if (!cartId) {
+        return res.send({status:"error", msg: `Todos los campos son obligatorios, favor de ingresar la informacion correctamente`});
+      } else {
+        try {
+          
+            let carrito = await Carritos.findById(cartId).select('productos').exec();
+            if (carrito === null) {
+                return res.status(404).json({msg: "No se encontró el carrito"});
+            }
         
-        if (carritoactualizar!==null) {
-            
-            if (productoagregar!==null) {
+            let producto = await Productos.findById(productId).select('stock').exec();
+            if (producto === null) {
+                return res.status(404).json({msg: "No se encontró el producto"});
+            }
+
+            if (producto.stock < quantity) {
+                return res.status(400).json({msg: "No hay suficiente stock del producto"});
+            }
         
+            let index = carrito.productos.findIndex(producto => producto.product.toString() === productId);
+            if (index !== -1) {
                 
-//
+                carrito.productos[index].quantity += quantity;
+            } else {
+                
+                carrito.productos.push({product: productId, quantity});
+            }
 
-                carritoactualizar.productoscarro.push({product:productId,quantity});
-                
-                
-  //              
-                let resulcarro = await Carritos.updateOne({_id: cartId}, carritoactualizar);
-                let resulstock = await Productos.updateOne({_id: productId}, {stock:stocknuevo} );
-         
-                res.status(201).json({
-                    msg: "El producto ha sido agregado", 
-                    carrito:resulcarro,
-                });
-             } else {
-                 res.status(404).json({msg:"No found it. El producto a modificar no existe"});
-             }
-
-        } else {
-            res.status(404).json({msg:"No found it. El carrito a modificar no existe"});
+            producto.stock -= quantity;
+            await producto.save();
+        
+            let result = await carrito.save();
+            res.status(201).json({
+                msg: "El producto ha sido agregado", 
+                carrito: result
+            });
+        } catch (error) {
+            res.status(500).json({msg: "Error al agregar el producto al carrito", error: error.message});
         }
-        
-    } 
+    
+    
 
-    } catch (error) {
-        console.log(error);
-    }
 
 /*
     let response = await carrito.updateCart(cartId,productId,quantity);
     
     res.status(200).json(response) */ 
+}
 });
 
+router.delete('/:cid', async(req,res)=>{
+    
+    let cartId = req.params.cid
+    
+    try {
+        let carrito = await Carritos.findById(cartId).exec();
+        
+        if (carrito) {
+            carrito.productos = [];
+            await carrito.save();
+    
+            res.status(202).json({
+                msg: "Todos los productos han sido eliminados del carrito",
+            });
+        } else {
+            res.status(404).json({msg:"No found it. El carrito a modificar no existe"});
+        }
+            
+    } catch (error) {
+        console.log(error);    
+    }
+
+});
+
+router.delete('/:cid/products/:pid', async(req,res)=>{
+
+    let cartId = req.params.cid
+    let productId = req.params.pid
+    
+    try {
+
+        let carrito = await Carritos.findById(cartId).exec();
+    
+    if (carrito) {
+        
+
+        let productosActuales = carrito.productos
+        
+       if (productosActuales.length == 0) {
+           return res.status(404).json({msg:"No found it. El producto a eliminar no existe en el carrito"});
+        } 
+         
+        let listanueva = productosActuales.filter(producto => {
+            return !producto.product.equals(productId);
+        });
+
+       carrito.productos = listanueva;
+       await carrito.save();
+
+        res.status(202).json({
+            msg: "El producto ha sido eliminado",
+        });
+    } else {
+        res.status(404).json({msg:"No found it. El producto a eliminar no existe"});
+    }
+        
+    } catch (error) {
+        
+        console.log(error);    
+            
+    }
+
+
+    /*sin mongo db
+    
+    let response = await producto.deleteProduct(productId);
+    
+    res.status(200).json(response) */ 
+});
 
 module.exports = router;
