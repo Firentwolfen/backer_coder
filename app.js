@@ -1,10 +1,17 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const session = require('express-session');
+const MongoStore = require('connect-mongo');
+const handlebars = require('express-handlebars');
+const cookieParser = require('cookie-parser');
+
 const app = express();
+
 const productsRouter = require('./routers/products.router');
 const cartsRouter = require('./routers/carts.router');
-const handlebars = require('express-handlebars');
+const usersRouter = require('./routers/users.router');
+const authRouter = require('./routers/auth.router');
 const viewsRouter = require('./routes/views.router.js');
 const {Server} = require('socket.io');
 const Producto = require("./ProductManager");
@@ -18,10 +25,26 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 app.use(morgan(':method :url :response-time'));
+app.use(cookieParser())
+app.use(
+   session({
+store: MongoStore.create({
+mongoUrl: 'mongodb+srv://aespinozaservicios:Vf1mE8DMrp8ualxD@cluster0.wzh9fgf.mongodb.net/?retryWrites=true&w=majority',
+mongoOptions:{useNewUrlParser: true,useUnifiedTopology:true},
+ttl:60,
+}),
 
+secret: 'coderSecret',
+resave:true,
+saveUninitialized:true,
+}) 
+)
 
+//Routers
 app.use('/api/products/',productsRouter)
 app.use('/api/carts/',cartsRouter)
+app.use('/users',usersRouter)
+app.use('/auth',authRouter)
 
 //MondoDb
 dbConnect();
