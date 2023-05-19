@@ -5,20 +5,21 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const handlebars = require('express-handlebars');
 const cookieParser = require('cookie-parser');
+const passport = require('passport')
+const {Server} = require('socket.io');
 
-const app = express();
-
+const initializePassport = require('./config/passport.config')
 const productsRouter = require('./routers/products.router');
 const cartsRouter = require('./routers/carts.router');
 const usersRouter = require('./routers/users.router');
 const authRouter = require('./routers/auth.router');
 const viewsRouter = require('./routes/views.router.js');
-const {Server} = require('socket.io');
 const Producto = require("./ProductManager");
 const dbConnect = require('./db/indexmngdb');
 const producto = new Producto("./routers/products.json");
 
 process.env.PORT = process.env.PORT || 8080;
+const app = express();
 
 // middlewares
 app.use(cors());
@@ -39,6 +40,9 @@ resave:true,
 saveUninitialized:true,
 }) 
 )
+initializePassport()
+app.use(passport.initialize())
+app.use(passport.session())
 
 //Routers
 app.use('/api/products/',productsRouter)
@@ -54,6 +58,7 @@ const httpServer = app.listen( process.env.PORT, () => {console.log('corriendo e
 
 const io = new Server(httpServer);
 
+//handlebars
 app.engine('handlebars',handlebars.engine());
 app.set('views',__dirname+'/views');
 app.set('view engine','handlebars');

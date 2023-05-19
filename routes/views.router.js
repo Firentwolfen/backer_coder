@@ -33,6 +33,14 @@ titulo:'Formulario de Creacion'
     })
 })
 
+router.get('/notAuthorized', publicAccess, (req, res) => {
+    res.render('notAuthorized.handlebars')
+  })
+  
+  router.get('/forgotPassword', (req, res) => {
+    res.render('forgotPassword.handlebars')
+  })
+
 router.get('/realtimeproducts',async(req,res)=>{
     
     res.render('realTimeProducts',{
