@@ -1,10 +1,13 @@
 const passport = require('passport')
 const local = require('passport-local')
-const Usuarios = require('../models/users.model')
+//const Usuarios = require('../models/users.model')
 const GithubStrategy = require('passport-github2')
 const { hashPassword, isValidPassword } = require('../utils/cryptPassword')
-
+const UsersDTO = require('../DTO/user.dto')
+const { createUser, findUser, findUserId } = require('../services/user.services')
 const LocalStrategy = local.Strategy
+
+//TODO CMABIAR LOS USUARIOS FINDOINE Y FINDBYID Y CREAR ESOS ESQUEMAS DE BUSQUEDAS EN EL ENTITY.DAO
 
 const initializePassport = () => {
   passport.use(
@@ -13,14 +16,16 @@ const initializePassport = () => {
       { passReqToCallback: true, usernameField: 'email' },
       async (req, username, password, done) => {
         try {
-          const { first_name, last_name, email, age, password } = req.body
+          //const { first_name, last_name, email, age, password } = req.body
 
-          const user = await Usuarios.findOne({ email: username })
+          const user = await findUser({ email: username })
+          //const user = await Usuarios.findOne({ email: username })
           if (user) {
             console.log('Usuario ya existe')
             return done(null, false)
           }
 
+          /*
           const newUserInfo = {
             first_name,
             last_name,
@@ -28,8 +33,10 @@ const initializePassport = () => {
             age,
             password: hashPassword(password),
           }
-
-          const newUser = await Usuarios.create(newUserInfo)
+*/
+const newUserInfo = new UsersDTO(req.body)
+//const newUser = await Usuarios.create(newUserInfo)
+const newUser = await createUser(newUserInfo);
 
           done(null, newUser)
         } catch (error) {
@@ -46,7 +53,8 @@ const initializePassport = () => {
       async (username, password, done) => {
         console.log(username,password);
         try {
-          const user = await Usuarios.findOne({ email: username })
+          //const user = await Usuarios.findOne({ email: username })
+          const user = await findUser({ email: username })
           if (!user) {
             console.log('El usuario no existe')
             return done(null, false)
@@ -74,7 +82,8 @@ const initializePassport = () => {
         try {
           console.log(profile)
 
-          const user = await Usuarios.findOne({ email: profile._json.email })
+          //const user = await Usuarios.findOne({ email: profile._json.email })
+           const user = await findUser({ email: profile._json.email })
 
           if (!user) {
             const newUserInfo = {
@@ -84,7 +93,9 @@ const initializePassport = () => {
               email: profile._json.email,
               password: '',
             }
-            const newUser = await Usuarios.create(newUserInfo)
+
+            const newUser = await createUser(newUserInfo);
+            //const newUser = await Usuarios.create(newUserInfo)
             return done(null, newUser)
           }
 
@@ -101,7 +112,8 @@ const initializePassport = () => {
   })
 
   passport.deserializeUser(async (id, done) => {
-    const user = await Usuarios.findById(id)
+    //const user = await Usuarios.findById(id)
+    const user = await findUserId(id)
     done(null, user)
   })
 }

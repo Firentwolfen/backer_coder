@@ -3,6 +3,7 @@ const router = Router();
 const Carrito = require("../CartManager");
 const Carritos = require('../models/carts.model');
 const Productos = require('../models/productos.model');
+const currentList = require('../middlewares/currentList.middelware');
 const carrito = new Carrito(__dirname+"/carts.json");
 
 router.get('/', async(req,res)=>{
@@ -249,4 +250,75 @@ router.delete('/:cid/products/:pid', async(req,res)=>{
     res.status(200).json(response) */ 
 });
 
+//TODO ahcer que funcione
+router.post('/:cid/purchase', currentList() ,async(req,res)=>{
+   
+    let cartId = req.params.cid;
+    let userId = req.params.uid;
+    let productList = req.params.list;
+
+    const {quantity} = req.body
+    
+    if (!cartId) {
+        return res.send({status:"error", msg: `Todos los campos son obligatorios, favor de ingresar la informacion correctamente`});
+      } else {
+        try {
+          
+            //TODO 
+ if (req.user.role !== 'user') {
+    return res.status(403).json({
+      status: 'error',
+      msg: 'Solo el usuario asignado pueden agregar productos al carro'
+    });
+  }
+
+
+
+
+            let carrito = await Carritos.findById(cartId).select('productos').exec();
+            if (carrito === null) {
+                return res.status(404).json({msg: "No se encontró el carrito"});
+            }
+        
+            //aqui va la confirmacion de los productos
+
+            let producto = await Productos.findById(productId).select('stock').exec();
+            if (producto === null) {
+                return res.status(404).json({msg: "No se encontró el producto"});
+            }
+
+            if (producto.stock < quantity) {
+                return res.status(400).json({msg: "No hay suficiente stock del producto"});
+            }
+        
+            let index = carrito.productos.findIndex(producto => producto.product.toString() === productId);
+            if (index !== -1) {
+                
+                carrito.productos[index].quantity += quantity;
+            } else {
+                
+                carrito.productos.push({product: productId, quantity});
+            }
+
+            producto.stock -= quantity;
+            await producto.save();
+        
+            let result = await carrito.save();
+            res.status(201).json({
+                msg: "El producto ha sido agregado", 
+                carrito: result
+            });
+        } catch (error) {
+            res.status(500).json({msg: "Error al agregar el producto al carrito", error: error.message});
+        }
+    
+    
+
+
+/*
+    let response = await carrito.updateCart(cartId,productId,quantity);
+    
+    res.status(200).json(response) */ 
+}
+    });
 module.exports = router;

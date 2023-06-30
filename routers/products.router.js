@@ -167,13 +167,27 @@ if (response!==null) {
 
 router.post('/', async(req,res)=>{
 
+    //TODO
+
+    
     const {code,title,description,price,stock,category,thumbnails} = req.body
 
 try {
+
+ // Verificar si el usuario tiene el rol de administrador
+ if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      status: 'error',
+      msg: 'Solo los administradores pueden agregar productos'
+    });
+  }
+
+
     if (!title || !description || !price || !category || !code || !stock) {
         return res.send({status:"error", msg: `Todos los campos son obligatorios, favor de ingresar la informacion correctamente`});
       } else {
 //sin MgDb let response = await producto.addProduct({code,title,description,price,stock,category,thumbnails});
+
 
 let response = await Productos.create({code,title,description,price,stock,category,thumbnails});
     
@@ -197,11 +211,21 @@ res.status(201).json({
 
 router.put('/:pid', async(req,res)=>{
 
+
+
     let productId = req.params.pid
 
     const valoresaactualizar = req.body
  
     try {
+
+ // Verificar si el usuario tiene el rol de administrador
+ if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      status: 'error',
+      msg: 'Solo los administradores pueden modificar productos'
+    });
+  }
 
         let response = await Productos.findById(productId).exec();
     
@@ -236,6 +260,15 @@ router.delete('/:pid', async(req,res)=>{
     let productId = req.params.pid
     
     try {
+
+ // Verificar si el usuario tiene el rol de administrador
+ if (req.user.role !== 'admin') {
+    return res.status(403).json({
+      status: 'error',
+      msg: 'Solo los administradores pueden eliminar productos'
+    });
+  }
+
 
         let response = await Productos.findById(productId).exec();
     
