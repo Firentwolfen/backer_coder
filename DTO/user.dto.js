@@ -6,7 +6,7 @@ this.email = info.email
 this.age =info.age
 this.phone =info.phone
 this.role = 'user'
-this.password = info.password
+//this.password = info.password
 }
 
 }
